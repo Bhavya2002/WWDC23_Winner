@@ -9,10 +9,11 @@ import UIKit
 import AVFoundation
 import SpriteKit
 import GameKit
+import ARKit
 
 let GameLengthInSeconds = 120
 
-class GameViewController: UIViewController {
+class GameViewController: UIViewController, ARSKViewDelegate {
     
     var level: Int!
     var scene: GameScene!
@@ -32,6 +33,9 @@ class GameViewController: UIViewController {
         return true
     }
     
+    var isARModeActive: Bool = false
+    var arSceneView: ARSKView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -48,9 +52,37 @@ class GameViewController: UIViewController {
         gameOverAlert.layer.borderWidth = 1.0
         
         skView.presentScene(scene)
+        
+        arSceneView = ARSKView(frame: view.bounds)
+        arSceneView.delegate = self
+        arSceneView.isHidden = true
+        view.addSubview(arSceneView)
+    }
+    
+    // Toggle AR Mode
+    func toggleARMode() {
+        isARModeActive.toggle()
+        if isARModeActive {
+            skView.isHidden = true
+            arSceneView.isHidden = false
+            setupARScene()
+        } else {
+            skView.isHidden = false
+            arSceneView.isHidden = true
+        }
+    }
+    
+    // Setup AR Scene
+    func setupARScene() {
+        guard let sceneView = arSceneView else { return }
+        let scene = SKScene(size: sceneView.bounds.size)
+        scene.scaleMode = .resizeFill
+        sceneView.presentScene(scene)
     }
     
     override func viewWillAppear(_ animated: Bool) {
+        
+        super.viewWillAppear(animated)
         
         scene.grid.setLevel(level) 
         
@@ -67,6 +99,15 @@ class GameViewController: UIViewController {
         pausedOverlay.isHidden = true
         
         beginGame()
+        if isARModeActive {
+            // Setup AR Scene if AR Mode is active
+            setupARScene()
+        }
+    }
+    
+    // IBAction to toggle AR Mode
+    @IBAction func toggleARModeButtonTapped(_ sender: Any) {
+        toggleARMode()
     }
     
     override func viewDidAppear(_ animated: Bool) {
